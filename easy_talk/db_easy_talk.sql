@@ -90,9 +90,11 @@ CREATE TABLE IF NOT EXISTS tb_psicologo_especializacoes
 -- Tabela para armazenar os horários disponíveis dos psicólogos
 CREATE TABLE IF NOT EXISTS tb_psicologo_horarios
 (
-    id           BIGSERIAL PRIMARY KEY, -- ID longo autoincrementável
+    id           BIGSERIAL, -- ID longo autoincrementável
     psicologo_id BIGSERIAL      NOT NULL,
     horario      TIMESTAMP NOT NULL,
+
+    PRIMARY KEY (id),
 
     FOREIGN KEY (psicologo_id) REFERENCES tb_psicologos (id)
 );
