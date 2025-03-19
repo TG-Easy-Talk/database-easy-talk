@@ -212,49 +212,88 @@ VALUES ('2025-04-10 09:00:00',
         'SOLICITADA',
         1,
         1,
-        '[{"titulo": "Checar documentos", "concluido": false}, {"titulo": "Confirmar consulta", "concluido": false}]',
+        '[
+          {
+            "titulo": "Checar documentos",
+            "concluido": false
+          },
+          {
+            "titulo": "Confirmar consulta",
+            "concluido": false
+          }
+        ]',
         'Consulta agendada para avaliação inicial.'),
        ('2025-04-11 10:00:00',
         45,
         'CONFIRMADA',
         2,
         2,
-        '[{"titulo": "Preparar sala", "concluido": false}, {"titulo": "Revisar histórico", "concluido": false}]',
+        '[
+          {
+            "titulo": "Preparar sala",
+            "concluido": false
+          },
+          {
+            "titulo": "Revisar histórico",
+            "concluido": false
+          }
+        ]',
         'Cliente relatou melhora no humor.'),
        ('2025-04-12 11:00:00',
         30,
         'CANCELADA',
         3,
         3,
-        '[{"titulo": "Reagendar consulta", "concluido": false}, {"titulo": "Avisar secretaria", "concluido": false}]',
+        '[
+          {
+            "titulo": "Reagendar consulta",
+            "concluido": false
+          },
+          {
+            "titulo": "Avisar secretaria",
+            "concluido": false
+          }
+        ]',
         'Consulta cancelada pelo cliente.'),
        ('2025-04-13 14:00:00',
         50,
         'EM_ANDAMENTO',
         4,
         4,
-        '[{"titulo": "Verificar resultados", "concluido": false}, {"titulo": "Acompanhar evolução", "concluido": false}]',
+        '[
+          {
+            "titulo": "Verificar resultados",
+            "concluido": false
+          },
+          {
+            "titulo": "Acompanhar evolução",
+            "concluido": false
+          }
+        ]',
         'Sessão em andamento, focada em ansiedade.'),
        ('2025-04-14 15:00:00',
         55,
         'FINALIZADA',
         5,
         5,
-        '[{"titulo": "Finalizar relatório", "concluido": false}, {"titulo": "Encaminhar para revisão", "concluido": false}]',
+        '[
+          {
+            "titulo": "Finalizar relatório",
+            "concluido": false
+          },
+          {
+            "titulo": "Encaminhar para revisão",
+            "concluido": false
+          }
+        ]',
         'Consulta finalizada com sucesso, encaminhado para relatório.');
 
-SELECT *
-FROM tb_users;
-SELECT *
-FROM tb_clientes;
-SELECT *
-FROM tb_psicologos;
-SELECT *
-FROM tb_especializacoes;
-SELECT *
-FROM tb_psicologo_especializacoes;
-SELECT *
-FROM tb_consultas;
+SELECT * FROM tb_users;
+SELECT * FROM tb_clientes;
+SELECT * FROM tb_psicologos;
+SELECT * FROM tb_especializacoes;
+SELECT * FROM tb_psicologo_especializacoes;
+SELECT * FROM tb_consultas;
 
 
 -- TRUNCATE TABLE
