@@ -5,22 +5,20 @@
 -- Seed de dados para tb_users
 -----------------------------
 INSERT INTO tb_users (email, password, role)
-VALUES ('admin@example.com', 'admin123', 'ADMIN'),       -- ID 1
-       ('client1@example.com', 'client123', 'PACIENTE'), -- ID 2
-       ('client2@example.com', 'client123', 'PACIENTE'), -- ID 3
-       ('client3@example.com', 'client123', 'PACIENTE'), -- ID 4
-       ('client4@example.com', 'client123', 'PACIENTE'), -- ID 5
-       ('client5@example.com', 'client123', 'PACIENTE'), -- ID 6
-       ('psych1@example.com', 'psych123', 'PSICÓLOGO'),  -- ID 7
-       ('psych2@example.com', 'psych123', 'PSICÓLOGO'),  -- ID 8
-       ('psych3@example.com', 'psych123', 'PSICÓLOGO'),  -- ID 9
-       ('psych4@example.com', 'psych123', 'PSICÓLOGO'),  -- ID 10
+VALUES ('admin@example.com', 'admin123', 'ADMIN'),
+       ('client1@example.com', 'client123', 'PACIENTE'),
+       ('client2@example.com', 'client123', 'PACIENTE'),
+       ('client3@example.com', 'client123', 'PACIENTE'),
+       ('client4@example.com', 'client123', 'PACIENTE'),
+       ('client5@example.com', 'client123', 'PACIENTE'),
+       ('psych1@example.com', 'psych123', 'PSICÓLOGO'),
+       ('psych2@example.com', 'psych123', 'PSICÓLOGO'),
+       ('psych3@example.com', 'psych123', 'PSICÓLOGO'),
+       ('psych4@example.com', 'psych123', 'PSICÓLOGO'),
        ('psych5@example.com', 'psych123', 'PSICÓLOGO');
--- ID 11
 
 -----------------------------
 -- Seed de dados para tb_clientes
--- (Supondo que os usuários com role PACIENTE foram gerados com IDs 2 a 6)
 -----------------------------
 INSERT INTO tb_clientes (nome, cpf, foto, user_id)
 VALUES ('Client One', '111.111.111-11', 'client1.jpg', 2),
@@ -55,17 +53,36 @@ VALUES ('Relacionamento', 'Foco em relacionamentos interpessoais e de casal'),
 
 -----------------------------
 -- Seed de dados para tb_psicologo_especializacoes
--- (Assumindo que os psicólogos recém-inseridos recebem IDs 1 a 5 nesta tabela)
--- Se no seu banco os IDs gerados automaticamente não começarem em 1,
--- ajuste conforme necessário.
 -----------------------------
+-- Psicólogo One: 1 especialização
 INSERT INTO tb_psicologo_especializacoes (psicologo_id, especializacao_id)
-VALUES (1, 1), -- Psych One -> Relacionamento
-       (2, 2), -- Psych Two -> Social
-       (3, 3), -- Psych Three -> Infantil
-       (4, 4), -- Psych Four -> Hospitalar
+VALUES (1, 1);
+
+-- Psicólogo Two: 2 especializações
+INSERT INTO tb_psicologo_especializacoes (psicologo_id, especializacao_id)
+VALUES (2, 2),
+       (2, 3);
+
+-- Psicólogo Three: 3 especializações
+INSERT INTO tb_psicologo_especializacoes (psicologo_id, especializacao_id)
+VALUES (3, 1),
+       (3, 3),
+       (3, 5);
+
+-- Psicólogo Four: 4 especializações
+INSERT INTO tb_psicologo_especializacoes (psicologo_id, especializacao_id)
+VALUES (4, 1),
+       (4, 2),
+       (4, 3),
+       (4, 4);
+
+-- Psicólogo Five: 5 especializações
+INSERT INTO tb_psicologo_especializacoes (psicologo_id, especializacao_id)
+VALUES (5, 1),
+       (5, 2),
+       (5, 3),
+       (5, 4),
        (5, 5);
--- Psych Five -> Trabalho
 
 -----------------------------
 -- Seed de dados para tb_psicologo_horarios
@@ -80,7 +97,7 @@ VALUES (1, '2025-04-01 09:00:00'),
 -----------------------------
 -- Seed de dados para tb_consultas
 -- (Utilizando 'estado_consulta_enum' no campo estado)
--- (Mapeando 'AGENDADA' => 'SOLICITADA' para ficar coerente com a UML)
+-- (Mapeando 'AGENDADA' → 'SOLICITADA' para ficar coerente com a UML)
 -----------------------------
 INSERT INTO tb_consultas (data_hora, duracao, tipo, estado, cliente_id, psicologo_id)
 VALUES ('2025-04-10 09:00:00', 60, 'MENSAGEM', 'SOLICITADA', 1, 1),
@@ -110,3 +127,16 @@ VALUES (1, 'Anotação para consulta 1'),
        (3, 'Anotação para consulta 3'),
        (4, 'Anotação para consulta 4'),
        (5, 'Anotação para consulta 5');
+
+
+-- Comando para excluir todas as inserções das tabelas, sem excluir as tabelas:
+-- TRUNCATE TABLE tb_anotacao_consulta,
+--     tb_checklist_tarefa,
+--     tb_consultas,
+--     tb_psicologo_horarios,
+--     tb_psicologo_especializacoes,
+--     tb_especializacoes,
+--     tb_psicologos,
+--     tb_clientes,
+--     tb_users
+--     RESTART IDENTITY CASCADE;
