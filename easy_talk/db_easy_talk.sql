@@ -13,11 +13,13 @@ CREATE DATABASE db_easy_talk;
 -- ----------------------------------------------------------------
 
 -- Estado da consulta, conforme UML
-CREATE TYPE estado_consulta_enum AS ENUM ('SOLICITADA',
+CREATE TYPE estado_consulta_enum AS ENUM (
+    'SOLICITADA',
     'CONFIRMADA',
     'CANCELADA',
     'EM_ANDAMENTO',
-    'FINALIZADA');
+    'FINALIZADA'
+    );
 
 
 -- ----------------------------------------------------------------
@@ -27,7 +29,7 @@ CREATE TYPE estado_consulta_enum AS ENUM ('SOLICITADA',
 -- 2.1) Tabela de usuários (dados comuns de autenticação)
 CREATE TABLE IF NOT EXISTS tb_users
 (
-    id       BIGSERIAL,             -- ID autoincrementável
+    id       BIGSERIAL, -- ID autoincrementável
     email    VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
 
@@ -39,6 +41,7 @@ CREATE TABLE IF NOT EXISTS tb_users
 -- 2.2) Tabela de clientes (subtipo de usuário)
 CREATE TABLE IF NOT EXISTS tb_clientes
 (
+    id      BIGSERIAL,   -- ID autoincrementável
     nome    VARCHAR(255) NOT NULL,
     cpf     VARCHAR(14)  NOT NULL,
     foto    VARCHAR(255),
@@ -46,13 +49,14 @@ CREATE TABLE IF NOT EXISTS tb_clientes
 
     UNIQUE (cpf),
 
-    PRIMARY KEY (user_id),
+    PRIMARY KEY (id),
     FOREIGN KEY (user_id) REFERENCES tb_users (id)
 );
 
 -- 2.3) Tabela de psicólogos (subtipo de usuário)
 CREATE TABLE IF NOT EXISTS tb_psicologos
 (
+    id      BIGSERIAL,   -- ID autoincrementável
     nome_completo    VARCHAR(255) NOT NULL,
     crp              VARCHAR(50)  NOT NULL,
     numero_registro  VARCHAR(50),
@@ -64,7 +68,7 @@ CREATE TABLE IF NOT EXISTS tb_psicologos
 
     UNIQUE (crp),
 
-    PRIMARY KEY (user_id),
+    PRIMARY KEY (id),
     FOREIGN KEY (user_id) REFERENCES tb_users (id)
 );
 
@@ -156,7 +160,7 @@ CREATE TABLE IF NOT EXISTS tb_anotacao
 --       dependendo do fluxo de desenvolvimento)
 -- ----------------------------------------------------------------
 
-/*
+
 DROP TABLE IF EXISTS tb_anotacao CASCADE;
 DROP TABLE IF EXISTS tb_checklist_tarefa CASCADE;
 DROP TABLE IF EXISTS tb_consultas CASCADE;
@@ -170,4 +174,3 @@ DROP TABLE IF EXISTS tb_users CASCADE;
 DROP TYPE IF EXISTS funcao_enum CASCADE;
 DROP TYPE IF EXISTS tipo_consulta_enum CASCADE;
 DROP TYPE IF EXISTS estado_consulta_enum CASCADE;
-*/
