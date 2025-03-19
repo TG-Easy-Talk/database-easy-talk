@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS tb_clientes
 
 CREATE TABLE IF NOT EXISTS tb_psicologos
 (
-    id               BIGSERIAL PRIMARY KEY,
+    id               BIGSERIAL,
     nome_completo    VARCHAR(255) NOT NULL,
     crp              VARCHAR(50)  NOT NULL UNIQUE,
     numero_registro  VARCHAR(50),
@@ -161,8 +161,8 @@ CREATE TABLE IF NOT EXISTS tb_psicologos
                                    ]
                                  }
                                ]'::jsonb,
-    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES tb_users (id),
-    CONSTRAINT check_disponibilidade CHECK (validate_disponibilidade(disponibilidade))
+    PRIMARY KEY (id),
+    FOREIGN KEY (user_id) REFERENCES tb_users (id)
 );
 
 
