@@ -1,62 +1,77 @@
-\c postgres
+-- ----------------------------------------------------------------
+--   Conecta ao banco postgres e recria o banco db_easy_talk
+-- ----------------------------------------------------------------
+\c postgres;
 
--- Criação do banco de dados "db_easy_talk"
 DROP DATABASE IF EXISTS db_easy_talk;
 CREATE DATABASE db_easy_talk;
 
--- Define o search_path para facilitar o uso dos objetos dentro do schema
-\c db_easy_talk
+\c db_easy_talk;
 
--- Criação dos tipos ENUM
+-- ----------------------------------------------------------------
+--   1) Criação dos tipos ENUM
+-- ----------------------------------------------------------------
+
+-- Papel/função do usuário (ex.: ADMIN, PACIENTE, PSICÓLOGO)
 CREATE TYPE funcao_enum AS ENUM ('ADMIN', 'PACIENTE', 'PSICÓLOGO');
-CREATE TYPE tipo_consulta_enum AS ENUM ('MENSAGEM', 'LIGACAO', 'VIDEOCHAMADA');
-CREATE TYPE status_consulta_enum AS ENUM ('AGENDADA', 'EM_ANDAMENTO', 'FINALIZADA');
 
--- Tabela de usuários (dados comuns de autenticação)
+-- Tipo de consulta (ex.: mensagem, ligação, videochamada)
+CREATE TYPE tipo_consulta_enum AS ENUM ('MENSAGEM', 'LIGACAO', 'VIDEOCHAMADA');
+
+-- Estado da consulta, conforme UML
+CREATE TYPE estado_consulta_enum AS ENUM ('SOLICITADA',
+    'CONFIRMADA',
+    'CANCELADA',
+    'EM_ANDAMENTO',
+    'FINALIZADA');
+
+
+-- ----------------------------------------------------------------
+--   2) Criação de Tabelas
+-- ----------------------------------------------------------------
+
+-- 2.1) Tabela de usuários (dados comuns de autenticação)
 CREATE TABLE IF NOT EXISTS tb_users
 (
-    id       BIGSERIAL,             -- ID longo autoincrementável
+    id       BIGSERIAL,             -- ID autoincrementável
     email    VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role     funcao_enum  NOT NULL, -- Usando o ENUM diretamente
+    role     funcao_enum  NOT NULL, -- Enum: ADMIN, PACIENTE, PSICÓLOGO
 
     UNIQUE (email),
 
     PRIMARY KEY (id)
 );
 
--- Tabela de clientes, composta por um User
+-- 2.2) Tabela de clientes (subtipo de usuário)
 CREATE TABLE IF NOT EXISTS tb_clientes
 (
-    id      BIGSERIAL, -- ID longo autoincrementável
+    id      BIGSERIAL,             -- ID autoincrementável
     nome    VARCHAR(255) NOT NULL,
-    email   VARCHAR(255) NOT NULL,
     cpf     VARCHAR(14)  NOT NULL,
     foto    VARCHAR(255),
-    user_id BIGSERIAL    NOT NULL,
+    user_id BIGINT       NOT NULL, -- Associação com tb_users
 
     PRIMARY KEY (id),
 
-    UNIQUE (email),
     UNIQUE (cpf),
 
     FOREIGN KEY (user_id) REFERENCES tb_users (id)
 );
 
--- Tabela de psicólogos, composta por um User
+-- 2.3) Tabela de psicólogos (subtipo de usuário)
 CREATE TABLE IF NOT EXISTS tb_psicologos
 (
-    id              BIGSERIAL, -- ID longo autoincrementável
-    nome_completo   VARCHAR(255) NOT NULL,
-    email           VARCHAR(255) NOT NULL,
-    crp             VARCHAR(50)  NOT NULL,
-    numero_registro VARCHAR(50),
-    foto            VARCHAR(255),
-    descricao       TEXT,
-    valor_consulta  NUMERIC(10, 2),
-    user_id         BIGSERIAL    NOT NULL,
+    id               BIGSERIAL,             -- ID autoincrementável
+    nome_completo    VARCHAR(255) NOT NULL,
+    crp              VARCHAR(50)  NOT NULL,
+    numero_registro  VARCHAR(50),
+    foto             VARCHAR(255),
+    descricao        TEXT,
+    duracao_consulta INT,                   -- Duração padrão da consulta (em minutos)
+    valor_consulta   NUMERIC(10, 2),
+    user_id          BIGINT       NOT NULL, -- Associação com tb_users
 
-    UNIQUE (email),
     UNIQUE (crp),
 
     PRIMARY KEY (id),
@@ -64,22 +79,24 @@ CREATE TABLE IF NOT EXISTS tb_psicologos
     FOREIGN KEY (user_id) REFERENCES tb_users (id)
 );
 
--- Tabela para as especializações (ex.: relacionamento, social, infantil, hospitalar, etc.)
+-- 2.4) Tabela das especializações (existe independentemente)
 CREATE TABLE IF NOT EXISTS tb_especializacoes
 (
-    id   SERIAL,
-    nome VARCHAR(100) NOT NULL,
+    id        BIGSERIAL,
+    titulo    VARCHAR(100) NOT NULL, -- Título/nome da especialização
+    descricao TEXT,                  -- Descrição da especialização
 
-    UNIQUE (nome),
+    UNIQUE (titulo),
 
     PRIMARY KEY (id)
 );
 
--- Tabela de relacionamento muitos-para-muitos entre Psicólogos e Especializações
+-- 2.5) Tabela de relacionamento muitos-para-muitos
+--      entre psicólogos e especializações
 CREATE TABLE IF NOT EXISTS tb_psicologo_especializacoes
 (
-    psicologo_id      BIGSERIAL NOT NULL,
-    especializacao_id INT       NOT NULL,
+    psicologo_id      BIGINT NOT NULL,
+    especializacao_id BIGINT NOT NULL,
 
     PRIMARY KEY (psicologo_id, especializacao_id),
 
@@ -87,28 +104,29 @@ CREATE TABLE IF NOT EXISTS tb_psicologo_especializacoes
     FOREIGN KEY (especializacao_id) REFERENCES tb_especializacoes (id)
 );
 
--- Tabela para armazenar os horários disponíveis dos psicólogos
+-- 2.6) Tabela para armazenar os horários disponíveis dos psicólogos
+--      (podemos armazenar um timestamp único ou um período de início/fim)
 CREATE TABLE IF NOT EXISTS tb_psicologo_horarios
 (
-    id           BIGSERIAL, -- ID longo autoincrementável
-    psicologo_id BIGSERIAL      NOT NULL,
-    horario      TIMESTAMP NOT NULL,
+    id           BIGSERIAL,          -- ID autoincrementável
+    psicologo_id BIGINT    NOT NULL,
+    horario      TIMESTAMP NOT NULL, -- Horário específico disponível
 
     PRIMARY KEY (id),
 
     FOREIGN KEY (psicologo_id) REFERENCES tb_psicologos (id)
 );
 
--- Tabela de consultas
+-- 2.7) Tabela de consultas
 CREATE TABLE IF NOT EXISTS tb_consultas
 (
-    id           BIGSERIAL, -- ID longo autoincrementável
+    id           BIGSERIAL,                     -- ID autoincrementável
     data_hora    TIMESTAMP            NOT NULL,
     duracao      INT,
-    tipo         tipo_consulta_enum   NOT NULL,
-    status       status_consulta_enum NOT NULL,
-    cliente_id   BIGSERIAL            NOT NULL,
-    psicologo_id BIGSERIAL            NOT NULL,
+    tipo         tipo_consulta_enum   NOT NULL, -- MENSAGEM, LIGACAO, VIDEOCHAMADA
+    estado       estado_consulta_enum NOT NULL, -- SOLICITADA, CONFIRMADA, CANCELADA...
+    cliente_id   BIGINT               NOT NULL,
+    psicologo_id BIGINT               NOT NULL,
 
     PRIMARY KEY (id),
 
@@ -116,12 +134,13 @@ CREATE TABLE IF NOT EXISTS tb_consultas
     FOREIGN KEY (psicologo_id) REFERENCES tb_psicologos (id)
 );
 
--- Tabela para o Checklist de Tarefas (cada consulta pode ter, no máximo, um checklist)
+-- 2.8) Tabela para Checklist de Tarefas
+--      (uma consulta pode ter, no máximo, um checklist)
 CREATE TABLE IF NOT EXISTS tb_checklist_tarefa
 (
-    id          BIGSERIAL, -- ID longo autoincrementável
-    consulta_id BIGSERIAL,
-    tarefas     TEXT,      -- Pode ser armazenado em formato JSON ou texto delimitado
+    id          BIGSERIAL,
+    consulta_id BIGINT,
+    tarefas     TEXT, -- pode ser JSON, texto simples, etc.
 
     UNIQUE (consulta_id),
 
@@ -129,12 +148,13 @@ CREATE TABLE IF NOT EXISTS tb_checklist_tarefa
     FOREIGN KEY (consulta_id) REFERENCES tb_consultas (id)
 );
 
--- Tabela para as Anotações das Consultas (uma consulta pode ter várias anotações)
+-- 2.9) Tabela para Anotações de cada consulta
+--      (uma consulta pode ter várias anotações)
 CREATE TABLE IF NOT EXISTS tb_anotacao_consulta
 (
-    id          BIGSERIAL, -- ID longo autoincrementável
-    consulta_id BIGSERIAL NOT NULL,
-    anotacao    TEXT      NOT NULL,
+    id          BIGSERIAL,
+    consulta_id BIGINT NOT NULL,
+    anotacao    TEXT   NOT NULL,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY (id),
@@ -142,8 +162,13 @@ CREATE TABLE IF NOT EXISTS tb_anotacao_consulta
     FOREIGN KEY (consulta_id) REFERENCES tb_consultas (id)
 );
 
+-- ----------------------------------------------------------------
+--   3) Comandos de DROP (tabelas e tipos ENUM)
+--      (Podem ser executados no início ou no final,
+--       dependendo do fluxo de desenvolvimento)
+-- ----------------------------------------------------------------
 
--- Comandos para apagar todas as tabelas criadas, em ordem que respeita as dependências
+/*
 DROP TABLE IF EXISTS tb_anotacao_consulta CASCADE;
 DROP TABLE IF EXISTS tb_checklist_tarefa CASCADE;
 DROP TABLE IF EXISTS tb_consultas CASCADE;
@@ -154,7 +179,7 @@ DROP TABLE IF EXISTS tb_psicologos CASCADE;
 DROP TABLE IF EXISTS tb_clientes CASCADE;
 DROP TABLE IF EXISTS tb_users CASCADE;
 
--- Em seguida, apague os tipos ENUM criados
 DROP TYPE IF EXISTS funcao_enum CASCADE;
 DROP TYPE IF EXISTS tipo_consulta_enum CASCADE;
-DROP TYPE IF EXISTS status_consulta_enum CASCADE;
+DROP TYPE IF EXISTS estado_consulta_enum CASCADE;
+*/
