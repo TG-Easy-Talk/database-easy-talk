@@ -124,20 +124,23 @@ CREATE TABLE IF NOT EXISTS tb_psicologo_especializacoes
 -- 2.6) Tabela de consultas (com checklist e anotações integrados)
 CREATE TABLE IF NOT EXISTS tb_consultas
 (
-    id               BIGSERIAL,                     -- ID autoincrementável
+    id               BIGSERIAL,
     data_hora        TIMESTAMP            NOT NULL,
     duracao          INT,
-    estado           estado_consulta_enum NOT NULL, -- SOLICITADA, CONFIRMADA, CANCELADA...
+    estado           estado_consulta_enum NOT NULL,
     cliente_id       BIGINT               NOT NULL,
     psicologo_id     BIGINT               NOT NULL,
-    checklist_tarefa TEXT,                          -- Checklist de tarefas (pode ser armazenado como JSON ou texto simples)
-    anotacao         TEXT,                          -- Anotação da consulta (caso a consulta permita somente uma anotação; se for múltipla, considere usar JSONB ou um array)
+
+    -- Campo JSONB para checklist (ex.: [{"titulo": "Tarefa X", "concluido": false}, ...])
+    checklist_tarefa JSONB,
+
+    anotacao         TEXT,
 
     PRIMARY KEY (id),
-
     FOREIGN KEY (cliente_id) REFERENCES tb_clientes (id),
     FOREIGN KEY (psicologo_id) REFERENCES tb_psicologos (id)
 );
+
 
 -- ----------------------------------------------------------------
 --   3) Comandos de DROP (tabelas e tipos ENUM)
