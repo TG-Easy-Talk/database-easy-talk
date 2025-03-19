@@ -2,11 +2,12 @@
 --   Conecta ao banco postgres e recria o banco db_easy_talk
 -- ----------------------------------------------------------------
 \c postgres;
+\c db_easy_talk;
 
 DROP DATABASE IF EXISTS db_easy_talk;
 CREATE DATABASE db_easy_talk;
 
-\c db_easy_talk;
+
 
 -- ----------------------------------------------------------------
 --   1) Criação dos tipos ENUM
@@ -22,6 +23,77 @@ CREATE TYPE estado_consulta_enum AS ENUM (
     );
 
 
+CREATE OR REPLACE FUNCTION validate_disponibilidade(disponibilidade JSONB)
+    RETURNS BOOLEAN AS
+$$
+DECLARE
+    rec            JSONB;
+    intervalos     JSONB;
+    intervalo      JSONB;
+    dia_valor      INTEGER;
+    horario_inicio TIME;
+    horario_fim    TIME;
+BEGIN
+    -- Verifica se o valor é um array JSON
+    IF jsonb_typeof(disponibilidade) <> 'array' THEN
+        RAISE EXCEPTION 'Formato inválido para disponibilidade. Deve ser um array JSON.';
+    END IF;
+
+    -- Itera sobre cada item do array
+    FOR rec IN SELECT * FROM jsonb_array_elements(disponibilidade)
+        LOOP
+            -- Verifica se existe a chave "dia_semana" e tenta convertê-la para inteiro
+            IF rec ? 'dia_semana' THEN
+                BEGIN
+                    dia_valor := (rec ->> 'dia_semana')::int;
+                EXCEPTION
+                    WHEN others THEN
+                        RAISE EXCEPTION 'O campo dia_semana deve ser um inteiro válido.';
+                END;
+            ELSE
+                RAISE EXCEPTION 'Cada item deve conter a chave "dia_semana".';
+            END IF;
+
+            -- Aceita apenas dias de 1 a 6 (domingo não é permitido)
+            IF dia_valor NOT BETWEEN 1 AND 6 THEN
+                RAISE EXCEPTION 'Consultas somente podem ser agendadas de segunda a sábado. Valor fornecido: %', dia_valor;
+            END IF;
+
+            -- Verifica se existe a chave "intervalos"
+            IF rec ? 'intervalos' THEN
+                intervalos := rec -> 'intervalos';
+                IF jsonb_typeof(intervalos) <> 'array' THEN
+                    RAISE EXCEPTION 'O campo intervalos deve ser um array JSON.';
+                END IF;
+
+                -- Itera pelos intervalos
+                FOR intervalo IN SELECT * FROM jsonb_array_elements(intervalos)
+                    LOOP
+                        IF intervalo ? 'horario_inicio' AND intervalo ? 'horario_fim' THEN
+                            BEGIN
+                                horario_inicio := (intervalo ->> 'horario_inicio')::time;
+                                horario_fim := (intervalo ->> 'horario_fim')::time;
+                            EXCEPTION
+                                WHEN others THEN
+                                    RAISE EXCEPTION 'Formato de horário inválido.';
+                            END;
+                        ELSE
+                            RAISE EXCEPTION 'Cada intervalo deve conter as chaves "horario_inicio" e "horario_fim".';
+                        END IF;
+
+                        -- Verifica sobreposição com o período proibido (01:00 a 04:00)
+                        IF horario_inicio < time '04:00' AND horario_fim > time '01:00' THEN
+                            RAISE EXCEPTION 'Intervalos que contenham horários entre 01:00 e 04:00 não são permitidos.';
+                        END IF;
+                    END LOOP;
+            ELSE
+                RAISE EXCEPTION 'Cada item de disponibilidade deve conter a chave "intervalos".';
+            END IF;
+        END LOOP;
+    RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql;
+
 -- ----------------------------------------------------------------
 --   2) Criação de Tabelas
 -- ----------------------------------------------------------------
@@ -29,9 +101,9 @@ CREATE TYPE estado_consulta_enum AS ENUM (
 -- 2.1) Tabela de usuários (dados comuns de autenticação)
 CREATE TABLE IF NOT EXISTS tb_users
 (
-    id       BIGSERIAL, -- ID autoincrementável
-    email    VARCHAR(255) NOT NULL,
-    password VARCHAR(255) NOT NULL,
+    id    BIGSERIAL, -- ID autoincrementável
+    email VARCHAR(255) NOT NULL,
+    senha VARCHAR(255) NOT NULL,
 
     UNIQUE (email),
 
@@ -41,7 +113,7 @@ CREATE TABLE IF NOT EXISTS tb_users
 -- 2.2) Tabela de clientes (subtipo de usuário)
 CREATE TABLE IF NOT EXISTS tb_clientes
 (
-    id      BIGSERIAL,   -- ID autoincrementável
+    id      BIGSERIAL,             -- ID autoincrementável
     nome    VARCHAR(255) NOT NULL,
     cpf     VARCHAR(14)  NOT NULL,
     foto    VARCHAR(255),
@@ -53,24 +125,46 @@ CREATE TABLE IF NOT EXISTS tb_clientes
     FOREIGN KEY (user_id) REFERENCES tb_users (id)
 );
 
--- 2.3) Tabela de psicólogos (subtipo de usuário)
 CREATE TABLE IF NOT EXISTS tb_psicologos
 (
-    id      BIGSERIAL,   -- ID autoincrementável
+    id               BIGSERIAL PRIMARY KEY,
     nome_completo    VARCHAR(255) NOT NULL,
-    crp              VARCHAR(50)  NOT NULL,
+    crp              VARCHAR(50)  NOT NULL UNIQUE,
     numero_registro  VARCHAR(50),
     foto             VARCHAR(255),
     descricao        TEXT,
-    duracao_consulta INT,                   -- Duração padrão da consulta (em minutos)
+    duracao_consulta INT, -- Duração padrão da consulta (em minutos)
     valor_consulta   NUMERIC(10, 2),
-    user_id          BIGINT       NOT NULL, -- Associação com tb_users
-
-    UNIQUE (crp),
-
-    PRIMARY KEY (id),
-    FOREIGN KEY (user_id) REFERENCES tb_users (id)
+    user_id          BIGINT       NOT NULL,
+    disponibilidade  JSONB DEFAULT
+                               '[
+                                 {
+                                   "dia_semana": 1,
+                                   "intervalos": [
+                                     {
+                                       "horario_inicio": "09:00",
+                                       "horario_fim": "12:00"
+                                     },
+                                     {
+                                       "horario_inicio": "14:00",
+                                       "horario_fim": "18:00"
+                                     }
+                                   ]
+                                 },
+                                 {
+                                   "dia_semana": 3,
+                                   "intervalos": [
+                                     {
+                                       "horario_inicio": "10:00",
+                                       "horario_fim": "16:00"
+                                     }
+                                   ]
+                                 }
+                               ]'::jsonb,
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES tb_users (id),
+    CONSTRAINT check_disponibilidade CHECK (validate_disponibilidade(disponibilidade))
 );
+
 
 -- 2.4) Tabela das especializações (existe independentemente)
 CREATE TABLE IF NOT EXISTS tb_especializacoes
@@ -97,61 +191,23 @@ CREATE TABLE IF NOT EXISTS tb_psicologo_especializacoes
     FOREIGN KEY (especializacao_id) REFERENCES tb_especializacoes (id)
 );
 
--- 2.6) Tabela para armazenar os horários disponíveis dos psicólogos
---      (podemos armazenar um timestamp único ou um período de início/fim)
-CREATE TABLE IF NOT EXISTS tb_psicologo_horarios
-(
-    id           BIGSERIAL,          -- ID autoincrementável
-    psicologo_id BIGINT    NOT NULL,
-    horario      TIMESTAMP NOT NULL, -- Horário específico disponível
 
-    PRIMARY KEY (id),
-
-    FOREIGN KEY (psicologo_id) REFERENCES tb_psicologos (id)
-);
-
--- 2.7) Tabela de consultas
+-- 2.7) Tabela de consultas (com checklist e anotações integrados)
 CREATE TABLE IF NOT EXISTS tb_consultas
 (
-    id           BIGSERIAL,                     -- ID autoincrementável
-    data_hora    TIMESTAMP            NOT NULL,
-    duracao      INT,
-    estado       estado_consulta_enum NOT NULL, -- SOLICITADA, CONFIRMADA, CANCELADA...
-    cliente_id   BIGINT               NOT NULL,
-    psicologo_id BIGINT               NOT NULL,
+    id               BIGSERIAL,                     -- ID autoincrementável
+    data_hora        TIMESTAMP            NOT NULL,
+    duracao          INT,
+    estado           estado_consulta_enum NOT NULL, -- SOLICITADA, CONFIRMADA, CANCELADA...
+    cliente_id       BIGINT               NOT NULL,
+    psicologo_id     BIGINT               NOT NULL,
+    checklist_tarefa TEXT,                          -- Checklist de tarefas (pode ser armazenado como JSON ou texto simples)
+    anotacao         TEXT,                          -- Anotação da consulta (caso a consulta permita somente uma anotação; se for múltipla, considere usar JSONB ou um array)
 
     PRIMARY KEY (id),
 
     FOREIGN KEY (cliente_id) REFERENCES tb_clientes (id),
     FOREIGN KEY (psicologo_id) REFERENCES tb_psicologos (id)
-);
-
--- 2.8) Tabela para Checklist de Tarefas
---      (uma consulta pode ter, no máximo, um checklist)
-CREATE TABLE IF NOT EXISTS tb_checklist_tarefa
-(
-    id          BIGSERIAL,
-    consulta_id BIGINT,
-    texto       TEXT, -- pode ser JSON, texto simples, etc.
-
-    UNIQUE (consulta_id),
-
-    PRIMARY KEY (id),
-    FOREIGN KEY (consulta_id) REFERENCES tb_consultas (id)
-);
-
--- 2.9) Tabela para Anotações de cada consulta
---      (uma consulta pode ter várias anotações)
-CREATE TABLE IF NOT EXISTS tb_anotacao
-(
-    id          BIGSERIAL,
-    consulta_id BIGINT NOT NULL,
-    texto       TEXT   NOT NULL,
-
-    UNIQUE (consulta_id),
-
-    PRIMARY KEY (id),
-    FOREIGN KEY (consulta_id) REFERENCES tb_consultas (id)
 );
 
 -- ----------------------------------------------------------------
@@ -161,8 +217,6 @@ CREATE TABLE IF NOT EXISTS tb_anotacao
 -- ----------------------------------------------------------------
 
 
-DROP TABLE IF EXISTS tb_anotacao CASCADE;
-DROP TABLE IF EXISTS tb_checklist_tarefa CASCADE;
 DROP TABLE IF EXISTS tb_consultas CASCADE;
 DROP TABLE IF EXISTS tb_psicologo_horarios CASCADE;
 DROP TABLE IF EXISTS tb_psicologo_especializacoes CASCADE;
