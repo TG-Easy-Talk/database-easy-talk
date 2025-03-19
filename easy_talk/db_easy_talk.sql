@@ -22,78 +22,6 @@ CREATE TYPE estado_consulta_enum AS ENUM (
     'FINALIZADA'
     );
 
-
-CREATE OR REPLACE FUNCTION validate_disponibilidade(disponibilidade JSONB)
-    RETURNS BOOLEAN AS
-$$
-DECLARE
-    rec            JSONB;
-    intervalos     JSONB;
-    intervalo      JSONB;
-    dia_valor      INTEGER;
-    horario_inicio TIME;
-    horario_fim    TIME;
-BEGIN
-    -- Verifica se o valor é um array JSON
-    IF jsonb_typeof(disponibilidade) <> 'array' THEN
-        RAISE EXCEPTION 'Formato inválido para disponibilidade. Deve ser um array JSON.';
-    END IF;
-
-    -- Itera sobre cada item do array
-    FOR rec IN SELECT * FROM jsonb_array_elements(disponibilidade)
-        LOOP
-            -- Verifica se existe a chave "dia_semana" e tenta convertê-la para inteiro
-            IF rec ? 'dia_semana' THEN
-                BEGIN
-                    dia_valor := (rec ->> 'dia_semana')::int;
-                EXCEPTION
-                    WHEN others THEN
-                        RAISE EXCEPTION 'O campo dia_semana deve ser um inteiro válido.';
-                END;
-            ELSE
-                RAISE EXCEPTION 'Cada item deve conter a chave "dia_semana".';
-            END IF;
-
-            -- Aceita apenas dias de 1 a 6 (domingo não é permitido)
-            IF dia_valor NOT BETWEEN 1 AND 6 THEN
-                RAISE EXCEPTION 'Consultas somente podem ser agendadas de segunda a sábado. Valor fornecido: %', dia_valor;
-            END IF;
-
-            -- Verifica se existe a chave "intervalos"
-            IF rec ? 'intervalos' THEN
-                intervalos := rec -> 'intervalos';
-                IF jsonb_typeof(intervalos) <> 'array' THEN
-                    RAISE EXCEPTION 'O campo intervalos deve ser um array JSON.';
-                END IF;
-
-                -- Itera pelos intervalos
-                FOR intervalo IN SELECT * FROM jsonb_array_elements(intervalos)
-                    LOOP
-                        IF intervalo ? 'horario_inicio' AND intervalo ? 'horario_fim' THEN
-                            BEGIN
-                                horario_inicio := (intervalo ->> 'horario_inicio')::time;
-                                horario_fim := (intervalo ->> 'horario_fim')::time;
-                            EXCEPTION
-                                WHEN others THEN
-                                    RAISE EXCEPTION 'Formato de horário inválido.';
-                            END;
-                        ELSE
-                            RAISE EXCEPTION 'Cada intervalo deve conter as chaves "horario_inicio" e "horario_fim".';
-                        END IF;
-
-                        -- Verifica sobreposição com o período proibido (01:00 a 04:00)
-                        IF horario_inicio < time '04:00' AND horario_fim > time '01:00' THEN
-                            RAISE EXCEPTION 'Intervalos que contenham horários entre 01:00 e 04:00 não são permitidos.';
-                        END IF;
-                    END LOOP;
-            ELSE
-                RAISE EXCEPTION 'Cada item de disponibilidade deve conter a chave "intervalos".';
-            END IF;
-        END LOOP;
-    RETURN TRUE;
-END;
-$$ LANGUAGE plpgsql;
-
 -- ----------------------------------------------------------------
 --   2) Criação de Tabelas
 -- ----------------------------------------------------------------
@@ -125,6 +53,7 @@ CREATE TABLE IF NOT EXISTS tb_clientes
     FOREIGN KEY (user_id) REFERENCES tb_users (id)
 );
 
+-- 2.3) Tabela de psicólogos (subtipo de usuário)
 CREATE TABLE IF NOT EXISTS tb_psicologos
 (
     id               BIGSERIAL,
@@ -192,7 +121,7 @@ CREATE TABLE IF NOT EXISTS tb_psicologo_especializacoes
 );
 
 
--- 2.7) Tabela de consultas (com checklist e anotações integrados)
+-- 2.6) Tabela de consultas (com checklist e anotações integrados)
 CREATE TABLE IF NOT EXISTS tb_consultas
 (
     id               BIGSERIAL,                     -- ID autoincrementável
