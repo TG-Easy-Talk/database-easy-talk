@@ -118,10 +118,10 @@ VALUES (1, '["Tarefa 1", "Tarefa 2"]'),
        (5, '["Tarefa 9", "Tarefa 10"]');
 
 -----------------------------
--- Seed de dados para tb_anotacao_consulta
+-- Seed de dados para tb_anotacao
 -- (Uma consulta pode ter várias anotações; aqui cada consulta recebe uma)
 -----------------------------
-INSERT INTO tb_anotacao_consulta (consulta_id, anotacao)
+INSERT INTO tb_anotacao (consulta_id, anotacao)
 VALUES (1, 'Anotação para consulta 1'),
        (2, 'Anotação para consulta 2'),
        (3, 'Anotação para consulta 3'),
@@ -130,7 +130,7 @@ VALUES (1, 'Anotação para consulta 1'),
 
 
 -- Comando para excluir todas as inserções das tabelas, sem excluir as tabelas:
--- TRUNCATE TABLE tb_anotacao_consulta,
+-- TRUNCATE TABLE tb_anotacao,
 --     tb_checklist_tarefa,
 --     tb_consultas,
 --     tb_psicologo_horarios,

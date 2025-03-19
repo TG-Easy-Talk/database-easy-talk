@@ -12,12 +12,6 @@ CREATE DATABASE db_easy_talk;
 --   1) Criação dos tipos ENUM
 -- ----------------------------------------------------------------
 
--- Papel/função do usuário (ex.: ADMIN, PACIENTE, PSICÓLOGO)
-CREATE TYPE funcao_enum AS ENUM ('ADMIN', 'PACIENTE', 'PSICÓLOGO');
-
--- Tipo de consulta (ex.: mensagem, ligação, videochamada)
-CREATE TYPE tipo_consulta_enum AS ENUM ('MENSAGEM', 'LIGACAO', 'VIDEOCHAMADA');
-
 -- Estado da consulta, conforme UML
 CREATE TYPE estado_consulta_enum AS ENUM ('SOLICITADA',
     'CONFIRMADA',
@@ -46,7 +40,6 @@ CREATE TABLE IF NOT EXISTS tb_users
 -- 2.2) Tabela de clientes (subtipo de usuário)
 CREATE TABLE IF NOT EXISTS tb_clientes
 (
-    id      BIGSERIAL,             -- ID autoincrementável
     nome    VARCHAR(255) NOT NULL,
     cpf     VARCHAR(14)  NOT NULL,
     foto    VARCHAR(255),
@@ -62,7 +55,6 @@ CREATE TABLE IF NOT EXISTS tb_clientes
 -- 2.3) Tabela de psicólogos (subtipo de usuário)
 CREATE TABLE IF NOT EXISTS tb_psicologos
 (
-    id               BIGSERIAL,             -- ID autoincrementável
     nome_completo    VARCHAR(255) NOT NULL,
     crp              VARCHAR(50)  NOT NULL,
     numero_registro  VARCHAR(50),
@@ -123,7 +115,6 @@ CREATE TABLE IF NOT EXISTS tb_consultas
     id           BIGSERIAL,                     -- ID autoincrementável
     data_hora    TIMESTAMP            NOT NULL,
     duracao      INT,
-    tipo         tipo_consulta_enum   NOT NULL, -- MENSAGEM, LIGACAO, VIDEOCHAMADA
     estado       estado_consulta_enum NOT NULL, -- SOLICITADA, CONFIRMADA, CANCELADA...
     cliente_id   BIGINT               NOT NULL,
     psicologo_id BIGINT               NOT NULL,
@@ -140,7 +131,7 @@ CREATE TABLE IF NOT EXISTS tb_checklist_tarefa
 (
     id          BIGSERIAL,
     consulta_id BIGINT,
-    tarefas     TEXT, -- pode ser JSON, texto simples, etc.
+    texto       TEXT, -- pode ser JSON, texto simples, etc.
 
     UNIQUE (consulta_id),
 
@@ -150,15 +141,15 @@ CREATE TABLE IF NOT EXISTS tb_checklist_tarefa
 
 -- 2.9) Tabela para Anotações de cada consulta
 --      (uma consulta pode ter várias anotações)
-CREATE TABLE IF NOT EXISTS tb_anotacao_consulta
+CREATE TABLE IF NOT EXISTS tb_anotacao
 (
     id          BIGSERIAL,
     consulta_id BIGINT NOT NULL,
-    anotacao    TEXT   NOT NULL,
-    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    texto       TEXT   NOT NULL,
+
+    UNIQUE (consulta_id),
 
     PRIMARY KEY (id),
-
     FOREIGN KEY (consulta_id) REFERENCES tb_consultas (id)
 );
 
@@ -169,7 +160,7 @@ CREATE TABLE IF NOT EXISTS tb_anotacao_consulta
 -- ----------------------------------------------------------------
 
 /*
-DROP TABLE IF EXISTS tb_anotacao_consulta CASCADE;
+DROP TABLE IF EXISTS tb_anotacao CASCADE;
 DROP TABLE IF EXISTS tb_checklist_tarefa CASCADE;
 DROP TABLE IF EXISTS tb_consultas CASCADE;
 DROP TABLE IF EXISTS tb_psicologo_horarios CASCADE;
