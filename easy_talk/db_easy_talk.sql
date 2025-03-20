@@ -122,6 +122,7 @@ CREATE TABLE IF NOT EXISTS tb_psicologo_especializacoes
 
 
 -- 2.6) Tabela de consultas (com checklist e anotações integrados)
+-- Criação da tabela com checklist_tarefa do tipo TEXT
 CREATE TABLE IF NOT EXISTS tb_consultas
 (
     id               BIGSERIAL,
@@ -131,8 +132,8 @@ CREATE TABLE IF NOT EXISTS tb_consultas
     cliente_id       BIGINT               NOT NULL,
     psicologo_id     BIGINT               NOT NULL,
 
-    -- Campo JSONB para checklist (ex.: [{"titulo": "Tarefa X", "concluido": false}, ...])
-    checklist_tarefa JSONB,
+    -- Campo TEXT para checklist de tarefas terapêuticas
+    checklist_tarefa TEXT,
 
     anotacao         TEXT,
 
@@ -140,7 +141,6 @@ CREATE TABLE IF NOT EXISTS tb_consultas
     FOREIGN KEY (cliente_id) REFERENCES tb_clientes (id),
     FOREIGN KEY (psicologo_id) REFERENCES tb_psicologos (id)
 );
-
 
 -- ----------------------------------------------------------------
 --   3) Comandos de DROP (tabelas e tipos ENUM)
