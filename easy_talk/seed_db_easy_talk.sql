@@ -207,86 +207,46 @@ VALUES (1, 1),
 
 INSERT INTO tb_consultas
 (data_hora, duracao, estado, cliente_id, psicologo_id, checklist_tarefa, anotacao)
-VALUES ('2025-04-10 09:00:00',
-        60,
-        'SOLICITADA',
-        1,
-        1,
-        '[
-          {
-            "titulo": "Checar documentos",
-            "concluido": false
-          },
-          {
-            "titulo": "Confirmar consulta",
-            "concluido": false
-          }
-        ]',
-        'Consulta agendada para avaliação inicial.'),
-       ('2025-04-11 10:00:00',
-        45,
-        'CONFIRMADA',
-        2,
-        2,
-        '[
-          {
-            "titulo": "Preparar sala",
-            "concluido": false
-          },
-          {
-            "titulo": "Revisar histórico",
-            "concluido": false
-          }
-        ]',
-        'Cliente relatou melhora no humor.'),
-       ('2025-04-12 11:00:00',
-        30,
-        'CANCELADA',
-        3,
-        3,
-        '[
-          {
-            "titulo": "Reagendar consulta",
-            "concluido": false
-          },
-          {
-            "titulo": "Avisar secretaria",
-            "concluido": false
-          }
-        ]',
-        'Consulta cancelada pelo cliente.'),
-       ('2025-04-13 14:00:00',
-        50,
-        'EM_ANDAMENTO',
-        4,
-        4,
-        '[
-          {
-            "titulo": "Verificar resultados",
-            "concluido": false
-          },
-          {
-            "titulo": "Acompanhar evolução",
-            "concluido": false
-          }
-        ]',
-        'Sessão em andamento, focada em ansiedade.'),
-       ('2025-04-14 15:00:00',
-        55,
-        'FINALIZADA',
-        5,
-        5,
-        '[
-          {
-            "titulo": "Finalizar relatório",
-            "concluido": false
-          },
-          {
-            "titulo": "Encaminhar para revisão",
-            "concluido": false
-          }
-        ]',
-        'Consulta finalizada com sucesso, encaminhado para relatório.');
+VALUES
+    ('2025-04-10 09:00:00',
+     60,
+     'SOLICITADA',
+     1,
+     1,
+     'Exercício de respiração; Registro de sentimentos',
+     'Consulta agendada para avaliação inicial.'),
+
+    ('2025-04-11 10:00:00',
+     45,
+     'CONFIRMADA',
+     2,
+     2,
+     'Anotar pensamentos automáticos; Prática de mindfulness',
+     'Cliente relatou melhora no humor.'),
+
+    ('2025-04-12 11:00:00',
+     30,
+     'CANCELADA',
+     3,
+     3,
+     'Reflexão pessoal; Técnicas de relaxamento',
+     'Consulta cancelada pelo cliente.'),
+
+    ('2025-04-13 14:00:00',
+     50,
+     'EM_ANDAMENTO',
+     4,
+     4,
+     'Registro do humor; Auto-observação diária',
+     'Sessão em andamento, focada em ansiedade.'),
+
+    ('2025-04-14 15:00:00',
+     55,
+     'FINALIZADA',
+     5,
+     5,
+     'Revisão dos exercícios terapêuticos; Planejamento de estratégias de coping',
+     'Consulta finalizada com sucesso, encaminhado para relatório.');
 
 SELECT * FROM tb_users;
 SELECT * FROM tb_clientes;
