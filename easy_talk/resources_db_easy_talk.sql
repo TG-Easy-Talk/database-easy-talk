@@ -1,0 +1,7 @@
+-- Ideias
+-- Trigger para Registro de Alterações no Estado das Consultas
+-- Function para Obter Horários Disponíveis
+-- Trigger para Validação de Conflitos de Horário de Consultas
+-- Procedure para Atualizar a Disponibilidade do Psicólogo
+-- Function para Verificar Autorização de Reagendamento ou Cancelamento
+-- Trigger para Gerar Notificações de Alteração de Estado em Consultas
